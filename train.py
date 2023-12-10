@@ -7,8 +7,8 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import argparse
 
-from src.model import CBOW
-from src.collator import CBOWCollator
+from src.model import CBOW, SkipGram
+from src.collator import CBOWCollator, SkipGramCollator
 from src.utils import preprocess, create_vocab
 from src.constants import EMBEDDING_DIMS, VOCAB_SIZE, MIN_WORD_FREQ, CONTEXT_LENGTH
 from src.dataset import GenericPairDataset
@@ -22,7 +22,8 @@ logging.basicConfig(
 )
 
 # parse command-line arguments
-parser = argparse.ArgumentParser(description="CBOW Model Training")
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", required=True, choices=["skipgram", "cbow"])
 parser.add_argument("--epochs", type=int, default=5, help="number of training epochs")
 parser.add_argument(
     "--output_dir",
@@ -45,13 +46,19 @@ vocabulary = create_vocab(
 )
 torch.save(vocabulary, os.path.join(args.output_dir, f"vocab.pt"))
 
-# load the model
-logging.info("Loading the model...")
-model = CBOW(vocab_size=len(vocabulary), dims=EMBEDDING_DIMS)
+# load models and collators
+logging.info("Loading models and collators...")
+if args.model == "skipgram":
+    model = SkipGram(vocab_size=len(vocabulary), dims=EMBEDDING_DIMS)
+    collator = SkipGramCollator(context_length=CONTEXT_LENGTH, vocab=vocabulary)
+elif args.model == "cbow":
+    model = CBOW(vocab_size=len(vocabulary), dims=EMBEDDING_DIMS)
+    collator = CBOWCollator(context_length=CONTEXT_LENGTH, vocab=vocabulary)
+else:
+    raise ValueError(f"Invalid model type: {args.model}")
 
 # create dataset
 logging.info("Creating dataset...")
-collator = CBOWCollator(context_length=CONTEXT_LENGTH, vocab=vocabulary)
 contexts, targets = collator.collate(data["tokens"])
 dataset = GenericPairDataset(contexts, targets)
 
@@ -85,5 +92,5 @@ for epoch in range(args.epochs):
     logging.info(f"Epoch {epoch+1}/{args.epochs}, Loss: {epoch_loss/len(dataset):.4f}")
 
     # Save the model checkpoint
-    checkpoint_path = os.path.join(args.output_dir, f"model_epoch_{epoch+1}.pt")
+    checkpoint_path = os.path.join(args.output_dir, f"{args.model}_epoch_{epoch+1}.pt")
     torch.save(model.state_dict(), checkpoint_path)
