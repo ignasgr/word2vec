@@ -61,4 +61,4 @@ class SkipGramCollator:
                 contexts.extend(context)
                 targets.extend([target] * len(context))
 
-        return torch.tensor(context), torch.tensor(targets)
+        return torch.tensor(contexts), torch.tensor(targets)
