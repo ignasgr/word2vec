@@ -9,8 +9,14 @@ import argparse
 
 from src.model import CBOW, SkipGram
 from src.collator import CBOWCollator, SkipGramCollator
-from src.utils import preprocess, create_vocab
-from src.constants import EMBEDDING_DIMS, VOCAB_SIZE, MIN_WORD_FREQ, CONTEXT_LENGTH
+from src.utils import preprocess, create_vocab, SubSampler
+from src.constants import (
+    EMBEDDING_DIMS,
+    VOCAB_SIZE,
+    MIN_WORD_FREQ,
+    CONTEXT_LENGTH,
+    SUBSAMPLE_THRESH,
+)
 from src.dataset import GenericPairDataset
 
 
@@ -38,6 +44,15 @@ data = load_dataset(
     "deokhk/en_wiki_sentences_100000", split="train", cache_dir="./data"
 )
 data = data.map(preprocess, remove_columns="sentence", num_proc=7)
+
+# profiling data for subsampling
+subsampler = SubSampler(threshold=SUBSAMPLE_THRESH)
+for sents in data["tokens"]:
+    subsampler.update_counts(sents)
+subsampler.update_probs()
+
+# sampling data
+data = data.map(lambda example: {"tokens": subsampler.sample(example["tokens"])})
 
 # create a vocabulary
 logging.info("Creating vocabulary...")

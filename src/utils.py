@@ -1,8 +1,59 @@
 import string
+import random
 from collections import Counter, OrderedDict
 from itertools import chain
+from typing import Iterable, Optional, Dict
 
 from torchtext.vocab import vocab
+
+
+class SubSampler:
+    def __init__(self, threshold: float, data: Optional[Iterable[str]] = None):
+        self.threshold = threshold
+        self.word_counts = Counter()
+        self.subsample_probs: Dict[str, float] = {}
+
+        if data is not None:
+            self.update_counts_probs(data)
+
+    def _calc_prob(self, freq: float) -> float:
+        """
+        Calculates the probability of dropping a word based on its frequency.
+        """
+        ratio = self.threshold / freq
+        return 1 - ratio**0.5 if ratio < 1.0 else 0.0
+
+    def update_counts(self, data: Iterable[str]) -> None:
+        self.word_counts.update(data)
+
+    def update_probs(self) -> None:
+        """
+        Updates the subsampling probabilities for each word in the word counts.
+        """
+        total_words = self.total_words
+        self.subsample_probs = {
+            word: self._calc_prob(count / total_words)
+            for word, count in self.word_counts.items()
+        }
+
+    @property
+    def total_words(self) -> int:
+        return sum(self.word_counts.values())
+
+    def update_counts_probs(self, data: Iterable[str]) -> None:
+        """
+        Updates words counts and subsampling probabilities
+        """
+        self.update_counts(data)
+        self.update_probs()
+
+    def sample(self, data: Iterable[str]) -> list[str]:
+        """
+        Applies subsampling to the provided data based on the computed probabilities.
+        """
+        return [
+            word for word in data if random.random() > self.subsample_probs.get(word, 0)
+        ]
 
 
 def preprocess(example):
