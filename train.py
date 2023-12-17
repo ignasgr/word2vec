@@ -36,21 +36,25 @@ parser.add_argument("--lr", type=int, default=0.001, help="training batch size")
 parser.add_argument("--output_dir", required=True, help="directory for saving checkpoints")
 args = parser.parse_args()
 
+# Check for GPU availability
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logging.info(f"Use device {device}")
+
 # load dataset and preprocess
 logging.info("Loading and preprocessing dataset...")
 data = load_dataset(
-    "deokhk/en_wiki_sentences_100000", split="train", cache_dir="./data"
+    "deokhk/en_wiki_sentences_100000", split="dev", cache_dir="./data"
 )
 data = data.map(preprocess, remove_columns="sentence", num_proc=7)
 
-# profiling data for subsampling
-subsampler = SubSampler(threshold=SUBSAMPLE_THRESH)
-for sents in data["tokens"]:
-    subsampler.update_counts(sents)
-subsampler.update_probs()
+# # profiling data for subsampling
+# subsampler = SubSampler(threshold=SUBSAMPLE_THRESH)
+# for sents in data["tokens"]:
+#     subsampler.update_counts(sents)
+# subsampler.update_probs()
 
-# sampling data
-data = data.map(lambda example: {"tokens": subsampler.sample(example["tokens"])})
+# # sampling data
+# data = data.map(lambda example: {"tokens": subsampler.sample(example["tokens"])})
 
 # create a vocabulary
 logging.info("Creating vocabulary...")
@@ -69,6 +73,8 @@ elif args.model == "cbow":
     collator = CBOWCollator(context_length=CONTEXT_LENGTH, vocab=vocabulary)
 else:
     raise ValueError(f"Invalid model type: {args.model}")
+
+model.to(device)
 
 # create dataset
 logging.info("Creating dataset...")
@@ -90,6 +96,10 @@ for epoch in range(args.epochs):
     epoch_loss = 0
 
     for batch_contexts, batch_targets in dataloader:
+
+        # Send data to GPU if available
+        batch_contexts, batch_targets = batch_contexts.to(device), batch_targets.to(device)
+
         optimizer.zero_grad()
 
         # forward pass
