@@ -8,7 +8,7 @@ class CBOW(nn.Module):
         self.linear = nn.Linear(in_features=dims, out_features=vocab_size)
 
     def forward(self, inputs):
-        embeds = self.embeddings(inputs).mean(dim=1)
+        embeds = self.embeddings(inputs).sum(dim=1)
         out = self.linear(embeds)
         return out
 
