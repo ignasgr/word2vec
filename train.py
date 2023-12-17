@@ -31,11 +31,9 @@ logging.basicConfig(
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", required=True, choices=["skipgram", "cbow"])
 parser.add_argument("--epochs", type=int, default=5, help="number of training epochs")
-parser.add_argument(
-    "--output_dir",
-    required=True,
-    help="directory for saving checkpoints",
-)
+parser.add_argument("--batch_size", type=int, default=64, help="training batch size")
+parser.add_argument("--lr", type=int, default=0.001, help="training batch size")
+parser.add_argument("--output_dir", required=True, help="directory for saving checkpoints")
 args = parser.parse_args()
 
 # load dataset and preprocess
@@ -79,9 +77,9 @@ dataset = GenericPairDataset(contexts, targets)
 
 # prepare data loader
 logging.info("Preparing data loader...")
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 criterion = nn.CrossEntropyLoss(ignore_index=vocabulary.get_default_index())
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 # ensure the output directory exists
 os.makedirs(args.output_dir, exist_ok=True)
