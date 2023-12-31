@@ -17,6 +17,7 @@ class CBOWCollator:
         Context ---> Target
         [5431, 2, 25, 550] ---> [6]
         """
+        predictors = []
         targets = []
 
         for sentence in sentences:
@@ -28,19 +29,19 @@ class CBOWCollator:
             encoded = self.vocab.lookup_indices(sentence)
 
             # target index refers to the target word, with context to left and right
-            for target_idx in range(
+            for center_idx in range(
                 self.context_length, len(encoded) - self.context_length
             ):
-                target = encoded[target_idx]
+                center = encoded[center_idx]
                 context = (
-                    encoded[target_idx - self.context_length : target_idx]
-                    + encoded[target_idx + 1 : target_idx + self.context_length + 1]
+                    encoded[center_idx - self.context_length : center_idx]
+                    + encoded[center_idx + 1 : center_idx + self.context_length + 1]
                 )
 
-                contexts.append(context)
-                targets.append(target)
+                predictors.append(context)
+                targets.append(center)
 
-        return torch.tensor(contexts), torch.tensor(targets)
+        return torch.tensor(predictors), torch.tensor(targets)
 
 
 class SkipGramCollator:
@@ -51,11 +52,12 @@ class SkipGramCollator:
     def collate(self, sentences: List[str]):
         """
         Creates predictor, target pairs for skipgram model. For skipgram, the context words are
-        the targets, and the context words are the targets.
+        the targets, and the center words are the predictors.
 
         context ---> target
         [4] ---> [67]
         """
+        predictors = []
         targets = []
 
         for sentence in sentences:
@@ -66,16 +68,19 @@ class SkipGramCollator:
 
             encoded = self.vocab.lookup_indices(sentence)
 
-            for target_idx in range(
+            # target index refers to target word, with context to the left and right
+            for center_idx in range(
                 self.context_length, len(encoded) - self.context_length
             ):
-                target = encoded[target_idx]
+                center = encoded[center_idx]
                 context = (
-                    encoded[target_idx - self.context_length : target_idx]
-                    + encoded[target_idx + 1 : target_idx + self.context_length + 1]
+                    encoded[center_idx - self.context_length : center_idx]
+                    + encoded[center_idx + 1 : center_idx + self.context_length + 1]
                 )
 
-                contexts.extend(context)
-                targets.extend([target] * len(context))
+                # predictors.extend(context)
+                # targets.extend([center] * len(context))
+                predictors.extend([center] * len(context))
+                targets.extend(context)
 
-        return torch.tensor(contexts), torch.tensor(targets)
+        return torch.tensor(predictors), torch.tensor(targets)
