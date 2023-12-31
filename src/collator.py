@@ -1,17 +1,27 @@
+from typing import List
+
 import torch
+import torchtext
 
 
 class CBOWCollator:
-    def __init__(self, context_length, vocab):
+    def __init__(self, context_length: int, vocab: torchtext.vocab):
         self.context_length = context_length
         self.vocab = vocab
 
-    def collate(self, sentences):
-        """creates context, target pairs"""
-        contexts = []
+    def collate(self, sentences: List[str]):
+        """
+        Creates predictor, target pairs for CBOW model. For CBOW, the context words are
+        predictors, and the center word is the target.
+        
+        Context ---> Target
+        [5431, 2, 25, 550] ---> [6]
+        """
         targets = []
 
         for sentence in sentences:
+
+            # skipping sentences that aren't log enough
             if len(sentence) < 1 + 2 * self.context_length:
                 continue
 
@@ -34,16 +44,23 @@ class CBOWCollator:
 
 
 class SkipGramCollator:
-    def __init__(self, context_length, vocab):
+    def __init__(self, context_length: int, vocab: torchtext.vocab):
         self.context_length = context_length
         self.vocab = vocab
 
-    def collate(self, sentences):
-        """creates context, target pairs"""
-        contexts = []
+    def collate(self, sentences: List[str]):
+        """
+        Creates predictor, target pairs for skipgram model. For skipgram, the context words are
+        the targets, and the context words are the targets.
+
+        context ---> target
+        [4] ---> [67]
+        """
         targets = []
 
         for sentence in sentences:
+
+            # skipping sentences that aren't log enough
             if len(sentence) < 1 + 2 * self.context_length:
                 continue
 
