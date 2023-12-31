@@ -78,8 +78,6 @@ class SkipGramCollator:
                     + encoded[center_idx + 1 : center_idx + self.context_length + 1]
                 )
 
-                # predictors.extend(context)
-                # targets.extend([center] * len(context))
                 predictors.extend([center] * len(context))
                 targets.extend(context)
 
