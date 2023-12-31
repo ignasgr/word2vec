@@ -32,7 +32,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", required=True, choices=["skipgram", "cbow"])
 parser.add_argument("--epochs", type=int, default=5, help="number of training epochs")
 parser.add_argument("--batch_size", type=int, default=64, help="training batch size")
-parser.add_argument("--lr", type=int, default=0.001, help="training batch size")
+parser.add_argument("--lr", type=float, default=0.001, help="training batch size")
+parser.add_argument("--split", default="train", choices=["train", "dev"])
 parser.add_argument("--output_dir", required=True, help="directory for saving checkpoints")
 args = parser.parse_args()
 
@@ -43,7 +44,7 @@ logging.info(f"Use device {device}")
 # load dataset and preprocess
 logging.info("Loading and preprocessing dataset...")
 data = load_dataset(
-    "deokhk/en_wiki_sentences_100000", split="dev", cache_dir="./data"
+    "deokhk/en_wiki_sentences_100000", split=args.split, cache_dir="./data"
 )
 data = data.map(preprocess, remove_columns="sentence", num_proc=7)
 
