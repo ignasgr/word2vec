@@ -22,13 +22,6 @@ from src.constants import (
 from src.dataset import GenericPairDataset
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    filename="./logs/training_log.log",
-    filemode="w",
-)
-
 # parse command-line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", required=True, choices=["skipgram", "cbow"])
@@ -38,6 +31,13 @@ parser.add_argument("--lr", type=float, default=0.001, help="training batch size
 parser.add_argument("--split", default="train", choices=["train", "dev"])
 parser.add_argument("--output_dir", required=True, help="directory for saving checkpoints")
 args = parser.parse_args()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    filename=f"./logs/{args.model}_training_log.log",
+    filemode="w",
+)
 
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
