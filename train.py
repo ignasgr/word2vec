@@ -1,11 +1,13 @@
+import argparse
 import logging
 import os
+from multiprocessing import cpu_count
+
 import torch
 import torch.nn as nn
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 import torch.optim as optim
-import argparse
 
 from src.model import CBOW, SkipGram
 from src.collator import CBOWCollator, SkipGramCollator
@@ -46,7 +48,7 @@ logging.info("Loading and preprocessing dataset...")
 data = load_dataset(
     "deokhk/en_wiki_sentences_100000", split=args.split, cache_dir="./data"
 )
-data = data.map(preprocess, remove_columns="sentence", num_proc=7)
+data = data.map(preprocess, remove_columns="sentence", num_proc=cpu_count() - 1)
 
 # # profiling data for subsampling
 # subsampler = SubSampler(threshold=SUBSAMPLE_THRESH)
@@ -62,7 +64,7 @@ logging.info("Creating vocabulary...")
 vocabulary = create_vocab(
     sentences=data["tokens"], max_size=VOCAB_SIZE, min_freq=MIN_WORD_FREQ
 )
-torch.save(vocabulary, os.path.join(args.output_dir, f"vocab.pt"))
+torch.save(vocabulary, os.path.join(args.output_dir, f"{args.model}_vocab.pt"))
 
 # load models and collators
 logging.info("Loading models and collators...")
